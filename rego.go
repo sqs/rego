@@ -93,7 +93,9 @@ func main() {
 			cmd := exec.Command(filepath.Join(pkg.BinDir, filepath.Base(pkg.ImportPath)), cmdArgs...)
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
-			log.Println(cmd.Args)
+			if *verbose {
+				log.Println(cmd.Args)
+			}
 			if err := cmd.Start(); err != nil {
 				log.Println(err)
 			}
@@ -115,7 +117,6 @@ func main() {
 			select {
 			case <-install:
 				needsInstall++
-				log.Printf("install %d", needsInstall)
 				continue
 			case <-timerChan:
 				needsInstall = 0
@@ -159,7 +160,9 @@ func main() {
 			case fsnotify.Chmod:
 				continue
 			}
-			log.Println(ev)
+			if *verbose {
+				log.Println(ev)
+			}
 			install <- struct{}{}
 		case err, ok := <-w.Errors:
 			if !ok {
