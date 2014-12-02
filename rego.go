@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"go/build"
 	"log"
 	"os"
@@ -103,7 +104,12 @@ func main() {
 		}
 	}()
 
+	nrestarts := 0
 	installAndRestart := func() {
+		s := "\x1b[37;1m\x1b[44m .. \x1b[0m"
+		del := len(s)
+		fmt.Fprint(os.Stderr, s)
+
 		cmd := exec.Command("go", "install", pkg.ImportPath)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -111,9 +117,18 @@ func main() {
 			log.Printf("go install %s", pkg.ImportPath)
 		}
 		if err := cmd.Run(); err == nil {
+			var word string
+			if nrestarts == 0 {
+				word = "starting"
+			} else {
+				word = "restarting"
+			}
+			nrestarts++
+			fmt.Fprint(os.Stderr, strings.Repeat("\b", del))
+			log.Println("\x1b[37;1m\x1b[42m ok \x1b[0m", word)
 			restart <- struct{}{}
 		} else {
-			log.Println("\x1b[37;1m\x1b[41m!!!\x1b[0m", "compilation failed")
+			log.Println("\x1b[37;1m\x1b[41m!!!!\x1b[0m", "compilation failed")
 		}
 	}
 
