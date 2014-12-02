@@ -102,7 +102,20 @@ func main() {
 			proc = cmd.Process
 		}
 	}()
-	restart <- struct{}{}
+
+	installAndRestart := func() {
+		cmd := exec.Command("go", "install", pkg.ImportPath)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if *verbose {
+			log.Printf("go install %s", pkg.ImportPath)
+		}
+		if err := cmd.Run(); err == nil {
+			restart <- struct{}{}
+		} else {
+			log.Println("\x1b[37;1m\x1b[41m!!!\x1b[0m", "compilation failed")
+		}
+	}
 
 	install := make(chan struct{})
 	go func() {
@@ -120,19 +133,11 @@ func main() {
 				continue
 			case <-timerChan:
 				needsInstall = 0
-				cmd := exec.Command("go", "install", pkg.ImportPath)
-				cmd.Stdout = os.Stdout
-				cmd.Stderr = os.Stderr
-				if *verbose {
-					log.Printf("go install %s", pkg.ImportPath)
-				}
-				if err := cmd.Run(); err != nil {
-					log.Println(err)
-				}
-				restart <- struct{}{}
+				installAndRestart()
 			}
 		}
 	}()
+	install <- struct{}{}
 
 	for {
 		select {
