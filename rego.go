@@ -16,6 +16,7 @@ import (
 
 var (
 	verbose = flag.Bool("v", false, "verbose output")
+	tags    = flag.String("tags", "", "Build tags to send to the Go compiler")
 
 	// otherPkgs lets you specify other packages that will also be
 	// installed when the watched files change. This lets you work
@@ -118,7 +119,7 @@ func main() {
 		del := len(s)
 		fmt.Fprint(os.Stderr, s)
 
-		cmd := exec.Command("go", "install", pkg.ImportPath)
+		cmd := exec.Command("go", "install", "-tags", *tags, pkg.ImportPath)
 		if *otherPkgs != "" {
 			cmd.Args = append(cmd.Args, strings.Split(*otherPkgs, ",")...)
 		}
