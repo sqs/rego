@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/tools/go/buildutil"
+
 	"github.com/go-fsnotify/fsnotify"
 )
 
@@ -25,6 +27,10 @@ var (
 	// you just need to specify any vendored package in this flag.
 	otherPkgs = flag.String("p", "", "also `go install` these other pkgs (comma-separated import paths)")
 )
+
+func init() {
+	flag.Var((*buildutil.TagsFlag)(&build.Default.BuildTags), "tags", buildutil.TagsFlagDoc)
+}
 
 func main() {
 	log.SetFlags(0)
@@ -118,7 +124,7 @@ func main() {
 		del := len(s)
 		fmt.Fprint(os.Stderr, s)
 
-		cmd := exec.Command("go", "install", pkg.ImportPath)
+		cmd := exec.Command("go", "install", "-tags="+strings.Join(build.Default.BuildTags, " "), pkg.ImportPath)
 		if *otherPkgs != "" {
 			cmd.Args = append(cmd.Args, strings.Split(*otherPkgs, ",")...)
 		}
