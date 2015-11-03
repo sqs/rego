@@ -18,6 +18,7 @@ import (
 
 var (
 	verbose = flag.Bool("v", false, "verbose output")
+	race    = flag.Bool("race", false, "build with Go race detector")
 
 	// otherPkgs lets you specify other packages that will also be
 	// installed when the watched files change. This lets you work
@@ -124,7 +125,11 @@ func main() {
 		del := len(s)
 		fmt.Fprint(os.Stderr, s)
 
-		cmd := exec.Command("go", "install", "-tags="+strings.Join(build.Default.BuildTags, " "), pkg.ImportPath)
+		cmd := exec.Command("go", "install", "-tags="+strings.Join(build.Default.BuildTags, " "))
+		if *race {
+			cmd.Args = append(cmd.Args, "-race")
+		}
+		cmd.Args = append(cmd.Args, pkg.ImportPath)
 		if *otherPkgs != "" {
 			cmd.Args = append(cmd.Args, strings.Split(*otherPkgs, ",")...)
 		}
