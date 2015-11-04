@@ -11,14 +11,14 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/tools/go/buildutil"
-
 	"github.com/go-fsnotify/fsnotify"
+	"golang.org/x/tools/go/buildutil"
 )
 
 var (
-	verbose = flag.Bool("v", false, "verbose output")
-	race    = flag.Bool("race", false, "build with Go race detector")
+	buildTags = flag.String("tags", "", buildutil.TagsFlagDoc)
+	verbose   = flag.Bool("v", false, "verbose output")
+	race      = flag.Bool("race", false, "build with Go race detector")
 
 	// otherPkgs lets you specify other packages that will also be
 	// installed when the watched files change. This lets you work
@@ -28,10 +28,6 @@ var (
 	// you just need to specify any vendored package in this flag.
 	otherPkgs = flag.String("p", "", "also `go install` these other pkgs (comma-separated import paths)")
 )
-
-func init() {
-	flag.Var((*buildutil.TagsFlag)(&build.Default.BuildTags), "tags", buildutil.TagsFlagDoc)
-}
 
 func main() {
 	log.SetFlags(0)
@@ -125,7 +121,7 @@ func main() {
 		del := len(s)
 		fmt.Fprint(os.Stderr, s)
 
-		cmd := exec.Command("go", "install", "-tags="+strings.Join(build.Default.BuildTags, " "))
+		cmd := exec.Command("go", "install", "-tags="+*buildTags)
 		if *race {
 			cmd.Args = append(cmd.Args, "-race")
 		}
