@@ -6,7 +6,7 @@ Usage:
 
 ```
 go get sourcegrah.com/sqs/rego
-rego [-v] import-path [optional args to program...]
+rego [-v] [-race] import-path [optional args to program...]
 ```
 
 Unlike [rerun](https://github.com/skelterjohn/rerun), it doesn't
