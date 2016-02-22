@@ -80,7 +80,7 @@ func main() {
 				if imp == "C" {
 					continue
 				}
-				impPkg, err := build.Import(imp, wd, 0)
+				impPkg, err := build.Import(imp, pkg.Dir, 0)
 				if err != nil {
 					log.Fatal(err)
 				}
