@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-fsnotify/fsnotify"
+	"github.com/fsnotify/fsnotify"
 	"golang.org/x/tools/go/buildutil"
 )
 
