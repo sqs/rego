@@ -5,7 +5,7 @@ rego reinstalls and reruns a Go program when its source files change.
 Usage:
 
 ```
-go get sourcegrah.com/sqs/rego
+go get -u sourcegraph.com.com/sqs/rego
 rego [-v] [-race] import-path [optional args to program...]
 ```
 
