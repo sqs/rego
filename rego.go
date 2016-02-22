@@ -19,14 +19,6 @@ var (
 	buildTags = flag.String("tags", "", buildutil.TagsFlagDoc)
 	verbose   = flag.Bool("v", false, "verbose output")
 	race      = flag.Bool("race", false, "build with Go race detector")
-
-	// otherPkgs lets you specify other packages that will also be
-	// installed when the watched files change. This lets you work
-	// around an annoyance where godep does not rebuild stale vendored
-	// dependencies when their sources change (see
-	// https://github.com/tools/godep/issues/45#issuecomment-73411554);
-	// you just need to specify any vendored package in this flag.
-	otherPkgs = flag.String("p", "", "also `go install` these other pkgs (comma-separated import paths)")
 )
 
 func main() {
@@ -126,9 +118,6 @@ func main() {
 			cmd.Args = append(cmd.Args, "-race")
 		}
 		cmd.Args = append(cmd.Args, pkg.ImportPath)
-		if *otherPkgs != "" {
-			cmd.Args = append(cmd.Args, strings.Split(*otherPkgs, ",")...)
-		}
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if *verbose {
