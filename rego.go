@@ -18,6 +18,7 @@ import (
 var (
 	buildTags = flag.String("tags", "", buildutil.TagsFlagDoc)
 	verbose   = flag.Bool("v", false, "verbose output")
+	timings   = flag.Bool("timings", false, "show timings")
 	race      = flag.Bool("race", false, "build with Go race detector")
 )
 
@@ -123,6 +124,7 @@ func main() {
 		if *verbose {
 			log.Println(cmd.Args)
 		}
+		start := time.Now()
 		if err := cmd.Run(); err == nil {
 			var word string
 			if nrestarts == 0 {
@@ -133,6 +135,9 @@ func main() {
 			nrestarts++
 			fmt.Fprint(os.Stderr, strings.Repeat("\b", del))
 			log.Println("\x1b[37;1m\x1b[42m ok \x1b[0m", word)
+			if *timings {
+				log.Println("compilation took", time.Since(start))
+			}
 			restart <- struct{}{}
 		} else {
 			log.Println("\x1b[37;1m\x1b[41m!!!!\x1b[0m", "compilation failed")
