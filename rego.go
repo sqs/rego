@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
 	"golang.org/x/tools/go/buildutil"
+	"gopkg.in/fsnotify.v1"
 )
 
 var (
