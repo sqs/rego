@@ -20,6 +20,7 @@ var (
 	verbose   = flag.Bool("v", false, "verbose output")
 	timings   = flag.Bool("timings", false, "show timings")
 	race      = flag.Bool("race", false, "build with Go race detector")
+	ienv      = flag.String("installenv", "", "env vars to pass to `go install` (comma-separated: A=B,C=D)")
 )
 
 func main() {
@@ -32,6 +33,11 @@ func main() {
 
 	pkgPath := flag.Arg(0)
 	cmdArgs := flag.Args()[1:]
+
+	var installEnv []string
+	if *ienv != "" {
+		installEnv = append(os.Environ(), strings.Split(*ienv, ",")...)
+	}
 
 	wd, err := os.Getwd()
 	if err != nil {
@@ -119,10 +125,14 @@ func main() {
 			cmd.Args = append(cmd.Args, "-race")
 		}
 		cmd.Args = append(cmd.Args, pkg.ImportPath)
+		cmd.Env = installEnv
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if *verbose {
 			log.Println(cmd.Args)
+			if installEnv != nil {
+				log.Println("# with env:", installEnv)
+			}
 		}
 		start := time.Now()
 		if err := cmd.Run(); err == nil {
