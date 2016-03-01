@@ -121,7 +121,7 @@ func main() {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if *verbose {
-			log.Printf("go install %s", pkg.ImportPath)
+			log.Println(cmd.Args)
 		}
 		if err := cmd.Run(); err == nil {
 			var word string
