@@ -190,22 +190,24 @@ func main() {
 				continue
 			}
 
-			switch ev.Op {
-			case fsnotify.Create:
-				if err := w.Add(ev.Name); err != nil {
-					log.Println(err)
+			go func() {
+				switch ev.Op {
+				case fsnotify.Create:
+					if err := w.Add(ev.Name); err != nil {
+						log.Println(err)
+					}
+				case fsnotify.Remove:
+					if err := w.Remove(ev.Name); err != nil {
+						log.Println(err)
+					}
+				case fsnotify.Chmod:
+					return
 				}
-			case fsnotify.Remove:
-				if err := w.Remove(ev.Name); err != nil {
-					log.Println(err)
+				if *verbose {
+					log.Println(ev)
 				}
-			case fsnotify.Chmod:
-				continue
-			}
-			if *verbose {
-				log.Println(ev)
-			}
-			install <- struct{}{}
+				install <- struct{}{}
+			}()
 		case err, ok := <-w.Errors:
 			if !ok {
 				break
