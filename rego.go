@@ -194,11 +194,15 @@ func main() {
 				switch ev.Op {
 				case fsnotify.Create:
 					if err := w.Add(ev.Name); err != nil {
-						log.Println(err)
+						if *verbose {
+							log.Println(err)
+						}
 					}
 				case fsnotify.Remove:
 					if err := w.Remove(ev.Name); err != nil {
-						log.Println(err)
+						if *verbose {
+							log.Println(err)
+						}
 					}
 				case fsnotify.Chmod:
 					return
