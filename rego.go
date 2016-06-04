@@ -176,6 +176,10 @@ func main() {
 	}()
 	install <- struct{}{}
 
+	matchFile := func(name string) bool {
+		return filepath.Ext(name) == ".go" && !strings.HasPrefix(filepath.Base(name), ".")
+	}
+
 	for {
 		select {
 		case ev, ok := <-w.Events:
@@ -183,21 +187,47 @@ func main() {
 				break
 			}
 
-			if ext := filepath.Ext(ev.Name); ext != ".go" {
-				continue
-			}
-			if strings.HasPrefix(filepath.Base(ev.Name), ".") {
-				continue
-			}
-
 			go func() {
 				switch ev.Op {
-				case fsnotify.Create:
-					if err := w.Add(ev.Name); err != nil {
+				case fsnotify.Create, fsnotify.Rename:
+					paths := []string{ev.Name}
+
+					// w.Add is non-recursive if the path is a dir, so
+					// we need to scan for the files here.
+					if fi, err := os.Stat(ev.Name); err != nil {
 						if *verbose {
 							log.Println(err)
 						}
+						return
+					} else if fi.Mode().IsDir() {
+						err := filepath.Walk(ev.Name, func(path string, info os.FileInfo, err error) error {
+							if err != nil {
+								if *verbose {
+									log.Println(err)
+								}
+								return nil
+							}
+							if info.Mode().IsDir() || matchFile(info.Name()) {
+								paths = append(paths, path)
+							}
+							return nil
+						})
+						if err != nil && *verbose {
+							log.Println(err)
+						}
+					} else if !matchFile(ev.Name) {
+						// File did not match.
+						return
 					}
+
+					for _, path := range paths {
+						if err := w.Add(path); err != nil {
+							if *verbose {
+								log.Println(err)
+							}
+						}
+					}
+
 				case fsnotify.Remove:
 					if err := w.Remove(ev.Name); err != nil {
 						if *verbose {
