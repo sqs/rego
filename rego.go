@@ -189,7 +189,7 @@ func main() {
 
 			go func() {
 				switch ev.Op {
-				case fsnotify.Create, fsnotify.Rename:
+				case fsnotify.Create, fsnotify.Rename, fsnotify.Write:
 					paths := []string{ev.Name}
 
 					// w.Add is non-recursive if the path is a dir, so
