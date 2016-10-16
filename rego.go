@@ -221,6 +221,9 @@ func main() {
 					}
 
 					for _, path := range paths {
+						if *verbose {
+							log.Printf("Watch %s", path)
+						}
 						if err := w.Add(path); err != nil {
 							if *verbose {
 								log.Println(err)
