@@ -62,17 +62,14 @@ func main() {
 	seenPkgs := map[string]struct{}{}
 	for i := 0; i < len(pkgs); i++ {
 		pkg := pkgs[i]
+		if pkg.Goroot {
+			continue // don't watch Go stdlib packages
+		}
+		if *verbose {
+			log.Printf("Watch %s", pkg.Dir)
+		}
 		if err := w.Add(pkg.Dir); err != nil {
 			log.Fatal(err)
-		}
-		for _, file := range pkg.GoFiles {
-			srcFile := filepath.Join(pkg.Dir, file)
-			if *verbose {
-				log.Printf("Watch %s", srcFile)
-			}
-			if err := w.Add(srcFile); err != nil {
-				log.Fatal(err)
-			}
 		}
 		for _, imp := range pkg.Imports {
 			if _, seen := seenPkgs[imp]; !seen {
