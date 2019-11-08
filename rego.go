@@ -18,12 +18,13 @@ import (
 )
 
 var (
-	buildTags = flag.String("tags", "", buildutil.TagsFlagDoc)
-	verbose   = flag.Bool("v", false, "verbose output")
-	timings   = flag.Bool("timings", false, "show timings")
-	race      = flag.Bool("race", false, "build with Go race detector")
-	ienv      = flag.String("installenv", "", "env vars to pass to `go install` (comma-separated: A=B,C=D)")
-	extra     = flag.String("extra-watches", "", "comma-separated path match patterns to also watch (in addition to transitive deps of Go pkg)")
+	buildTags  = flag.String("tags", "", buildutil.TagsFlagDoc)
+	verbose    = flag.Bool("v", false, "verbose output")
+	timings    = flag.Bool("timings", false, "show timings")
+	race       = flag.Bool("race", false, "build with Go race detector")
+	ienv       = flag.String("installenv", "", "env vars to pass to `go install` (comma-separated: A=B,C=D)")
+	installDir = flag.String("installdir", "", "change to dir before running `go install`")
+	extra      = flag.String("extra-watches", "", "comma-separated path match patterns to also watch (in addition to transitive deps of Go pkg)")
 )
 
 func main() {
@@ -159,6 +160,7 @@ func main() {
 			cmd.Args = append(cmd.Args, "-race")
 		}
 		cmd.Args = append(cmd.Args, pkg.ImportPath)
+		cmd.Dir = *installDir
 		cmd.Env = installEnv
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
