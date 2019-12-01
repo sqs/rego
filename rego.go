@@ -18,13 +18,13 @@ import (
 )
 
 var (
-	buildTags  = flag.String("tags", "", buildutil.TagsFlagDoc)
-	verbose    = flag.Bool("v", false, "verbose output")
-	timings    = flag.Bool("timings", false, "show timings")
-	race       = flag.Bool("race", false, "build with Go race detector")
-	ienv       = flag.String("installenv", "", "env vars to pass to `go install` (comma-separated: A=B,C=D)")
-	installDir = flag.String("installdir", "", "change to dir before running `go install`")
-	extra      = flag.String("extra-watches", "", "comma-separated path match patterns to also watch (in addition to transitive deps of Go pkg)")
+	buildTags = flag.String("tags", "", buildutil.TagsFlagDoc)
+	verbose   = flag.Bool("v", false, "verbose output")
+	timings   = flag.Bool("timings", false, "show timings")
+	race      = flag.Bool("race", false, "build with Go race detector")
+	ienv      = flag.String("installenv", "", "env vars to pass to `go install` (comma-separated: A=B,C=D)")
+	wdir      = flag.String("workdir", "", "working dir to locate the main module and run `go install`")
+	extra     = flag.String("extra-watches", "", "comma-separated path match patterns to also watch (in addition to transitive deps of Go pkg)")
 )
 
 func main() {
@@ -43,18 +43,24 @@ func main() {
 		installEnv = append(os.Environ(), strings.Split(*ienv, ",")...)
 	}
 
-	wd, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
+	var workingDir string
+	if *wdir != "" {
+		workingDir = *wdir
+	} else {
+		var err error
+		workingDir, err = os.Getwd()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
-	pkg, err := build.Import(pkgPath, wd, 0)
+	mainPkg, err := build.Import(pkgPath, workingDir, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	if *verbose {
-		log.Printf("Watching package %s", pkg.ImportPath)
+		log.Printf("Watching package %s", mainPkg.ImportPath)
 	}
 
 	w, err := fsnotify.NewWatcher()
@@ -62,7 +68,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	pkgs := []*build.Package{pkg}
+	pkgs := []*build.Package{mainPkg}
 	seenPkgs := map[string]struct{}{}
 	for i := 0; i < len(pkgs); i++ {
 		pkg := pkgs[i]
@@ -77,10 +83,10 @@ func main() {
 		}
 		for _, imp := range pkg.Imports {
 			if _, seen := seenPkgs[imp]; !seen {
-				if imp == "C" {
+				if imp == "C" || strings.HasPrefix(imp, ".") {
 					continue
 				}
-				impPkg, err := build.Import(imp, pkg.Dir, 0)
+				impPkg, err := build.Import(imp, workingDir, 0)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -127,7 +133,7 @@ func main() {
 			if !alive {
 				os.Exit(0)
 			}
-			cmd := exec.Command(filepath.Join(pkg.BinDir, filepath.Base(pkg.ImportPath)), cmdArgs...)
+			cmd := exec.Command(filepath.Join(mainPkg.BinDir, filepath.Base(mainPkg.ImportPath)), cmdArgs...)
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			if *verbose {
@@ -159,8 +165,8 @@ func main() {
 		if *race {
 			cmd.Args = append(cmd.Args, "-race")
 		}
-		cmd.Args = append(cmd.Args, pkg.ImportPath)
-		cmd.Dir = *installDir
+		cmd.Args = append(cmd.Args, mainPkg.ImportPath)
+		cmd.Dir = workingDir
 		cmd.Env = installEnv
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
