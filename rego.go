@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -81,19 +82,41 @@ func main() {
 		if err := w.Add(pkg.Dir); err != nil {
 			log.Fatal(err)
 		}
+
+		var (
+			mu sync.Mutex
+			wg sync.WaitGroup
+		)
 		for _, imp := range pkg.Imports {
-			if _, seen := seenPkgs[imp]; !seen {
-				if imp == "C" || strings.HasPrefix(imp, ".") {
-					continue
-				}
+			mu.Lock()
+			_, seen := seenPkgs[imp]
+			mu.Unlock()
+			if seen {
+				continue
+			}
+
+			if imp == "C" || strings.HasPrefix(imp, ".") {
+				return
+			}
+
+			go func(imp string) {
+				wg.Add(1)
+				defer wg.Done()
+				t0 := time.Now()
 				impPkg, err := build.Import(imp, workingDir, 0)
 				if err != nil {
 					log.Fatal(err)
 				}
+				if *verbose {
+					log.Printf("Import %s [%s]", imp, time.Since(t0))
+				}
+				mu.Lock()
+				defer mu.Unlock()
 				pkgs = append(pkgs, impPkg)
 				seenPkgs[imp] = struct{}{}
-			}
+			}(imp)
 		}
+		wg.Wait()
 	}
 
 	extraPaths := map[string]bool{}
