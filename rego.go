@@ -99,8 +99,8 @@ func main() {
 				return
 			}
 
+			wg.Add(1)
 			go func(imp string) {
-				wg.Add(1)
 				defer wg.Done()
 				t0 := time.Now()
 				impPkg, err := build.Import(imp, workingDir, 0)
